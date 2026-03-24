@@ -344,7 +344,7 @@ def worker(work_q, result_q, run_spell, run_links):
                 try:
                     page = ctx.new_page()
                     Stealth().apply_stealth_sync(page)
-                    page.goto(page_url, wait_until="domcontentloaded", timeout=10000)
+                    page.goto(page_url, wait_until="domcontentloaded", timeout=20000)
                     page.wait_for_selector("body")
 
                     typos       = check_spelling(page) if run_spell else []
