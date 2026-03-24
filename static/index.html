@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Testing  Tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+/* ─── reset & vars ─────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0b0d12;
+  --surface:   #12151e;
+  --surface2:  #1a1f2e;
+  --border:    #252a3a;
+  --border2:   #2e3548;
+  --accent:    #4f6ef7;
+  --accent2:   #7c93fa;
+  --green:     #22c55e;
+  --red:       #ef4444;
+  --amber:     #f59e0b;
+  --text:      #e8eaf0;
+  --muted:     #6b7080;
+  --mono:      'Space Mono', monospace;
+  --sans:      'Syne', sans-serif;
+  --radius:    10px;
+  --sidebar:   280px;
+}
+
+html { height: 100%; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── layout ────────────────────────────────────────────────────────────── */
+.app {
+  display: grid;
+  grid-template-columns: var(--sidebar) 1fr;
+  grid-template-rows: auto 1fr;
+  min-height: 100vh;
+}
+
+/* ─── topbar ─────────────────────────────────────────────────────────────── */
+.topbar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 24px;
+  height: 60px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.topbar-logo {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--accent2);
+  letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topbar-logo .icon {
+  width: 28px; height: 28px;
+  background: linear-gradient(135deg, var(--accent) 0%, #7c3aed 100%);
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+}
+
+.topbar-caps {
+  margin-left: auto;
+  display: flex;
+  gap: 10px;
+}
+
+.cap-badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid;
+}
+
+.cap-badge.on  { border-color: #22c55e55; color: var(--green); background: #22c55e12; }
+.cap-badge.off { border-color: #ef444455; color: var(--red);   background: #ef444412; }
+
+/* ─── sidebar ─────────────────────────────────────────────────────────────── */
+.sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+  height: calc(100vh - 60px);
+  position: sticky;
+  top: 60px;
+}
+
+.sidebar-section label.section-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 10px;
+}
+
+/* ─── form controls ──────────────────────────────────────────────────────── */
+.radio-group {
+  display: flex;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.radio-group label {
+  flex: 1;
+  text-align: center;
+  padding: 7px 6px;
+  font-size: 12px;
+  font-family: var(--mono);
+  cursor: pointer;
+  color: var(--muted);
+  transition: all 0.15s;
+  user-select: none;
+}
+
+.radio-group input[type="radio"] { display: none; }
+.radio-group input[type="radio"]:checked + label {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+}
+
+input[type="text"], textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 9px 12px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+input[type="text"]:focus, textarea:focus {
+  border-color: var(--accent);
+}
+
+textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.toggle-label { font-size: 13px; color: var(--text); }
+
+.toggle {
+  position: relative;
+  width: 40px; height: 22px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-track {
+  position: absolute; inset: 0;
+  background: var(--border2);
+  border-radius: 99px;
+  transition: background 0.2s;
+}
+.toggle input:checked ~ .toggle-track { background: var(--accent); }
+.toggle-thumb {
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 16px; height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  pointer-events: none;
+}
+.toggle input:checked ~ .toggle-thumb { transform: translateX(18px); }
+
+.slider-wrap { display: flex; flex-direction: column; gap: 6px; }
+.slider-wrap .slider-top { display: flex; justify-content: space-between; font-size: 12px; }
+.slider-val { font-family: var(--mono); color: var(--accent2); font-weight: 700; }
+
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.btn-primary {
+  display: block;
+  width: 100%;
+  padding: 11px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.btn-primary:hover { background: var(--accent2); transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+.btn-primary:disabled { background: var(--border2); color: var(--muted); cursor: not-allowed; transform: none; }
+
+.divider { border: none; border-top: 1px solid var(--border); margin: 0; }
+
+/* ─── dictionary sidebar panel ───────────────────────────────────────────── */
+.dict-list { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.dict-word {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+}
+.dict-rm {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+.dict-rm:hover { color: var(--red); }
+
+/* ─── main content ───────────────────────────────────────────────────────── */
+.main {
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ─── empty state ────────────────────────────────────────────────────────── */
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+  color: var(--muted);
+  padding: 60px 20px;
+}
+.empty-icon {
+  font-size: 3.5rem;
+  filter: grayscale(0.4);
+}
+.empty-state h2 { font-size: 18px; font-weight: 600; color: var(--text); }
+.empty-state p  { font-size: 13px; line-height: 1.6; max-width: 360px; }
+
+/* ─── progress section ───────────────────────────────────────────────────── */
+.progress-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.progress-title {
+  font-size: 13px;
+  font-family: var(--mono);
+  color: var(--accent2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.spinner {
+  width: 14px; height: 14px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.progress-bar-wrap {
+  background: var(--bg);
+  border-radius: 99px;
+  height: 6px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  border-radius: 99px;
+  transition: width 0.4s ease;
+  width: 0%;
+}
+
+.progress-stats {
+  display: flex;
+  gap: 20px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.progress-stat strong { color: var(--text); }
+
+.log-lines {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.7;
+  max-height: 100px;
+  overflow-y: auto;
+}
+
+/* ─── metrics row ─────────────────────────────────────────────────────────── */
+.metrics-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.metric-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 14px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metric-val {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+  font-family: var(--mono);
+}
+
+.metric-lbl {
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.metric-val.green { color: var(--green); }
+.metric-val.red   { color: var(--red);   }
+.metric-val.amber { color: var(--amber); }
+
+/* ─── tabs ───────────────────────────────────────────────────────────────── */
+.tabs-wrap { display: flex; flex-direction: column; gap: 0; }
+
+.tab-bar {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  gap: 0;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 10px 18px;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  margin-bottom: -1px;
+}
+
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--accent2); border-bottom-color: var(--accent); }
+
+.tab-panel { display: none; padding: 20px 0; }
+.tab-panel.active { display: block; }
+
+/* ─── filter bar ─────────────────────────────────────────────────────────── */
+.filter-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.filter-pills {
+  display: flex;
+  gap: 6px;
+}
+
+.pill {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 5px 14px;
+  font-size: 12px;
+  font-family: var(--mono);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.pill:hover  { border-color: var(--accent); color: var(--accent2); }
+.pill.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+
+.filter-search { flex: 1; min-width: 160px; }
+
+/* ─── link rows ──────────────────────────────────────────────────────────── */
+.link-list { display: flex; flex-direction: column; gap: 6px; }
+
+.link-row {
+  display: grid;
+  grid-template-columns: 80px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  transition: border-color 0.15s;
+}
+
+.link-row:hover { border-color: var(--border2); }
+.link-row.broken-row { border-left: 3px solid var(--red); }
+.link-row.ok-row     { border-left: 3px solid var(--green); }
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-family: var(--mono);
+  font-weight: 700;
+  text-align: center;
+}
+
+.badge.ok  { background: #22c55e18; color: var(--green); border: 1px solid #22c55e44; }
+.badge.bad { background: #ef444418; color: var(--red);   border: 1px solid #ef444444; }
+
+.link-url {
+  font-family: var(--mono);
+  font-size: 12px;
+  word-break: break-all;
+  color: var(--text);
+}
+
+.link-detail {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.count-caption {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--mono);
+  margin-bottom: 10px;
+}
+
+/* ─── spell rows ─────────────────────────────────────────────────────────── */
+.spell-list { display: flex; flex-direction: column; gap: 8px; }
+
+.spell-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.spell-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+  gap: 12px;
+}
+
+.spell-header:hover { background: var(--surface2); }
+
+.spell-word {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--amber);
+}
+
+.spell-arrow {
+  font-size: 11px;
+  color: var(--muted);
+  margin: 0 6px;
+}
+
+.spell-suggestion {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--green);
+  font-style: italic;
+}
+
+.spell-expand {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px;
+  transition: color 0.15s, transform 0.15s;
+  flex-shrink: 0;
+}
+
+.spell-expand.open { transform: rotate(180deg); color: var(--accent2); }
+
+.spell-body {
+  display: none;
+  padding: 0 16px 14px;
+  border-top: 1px solid var(--border);
+}
+
+.spell-body.open { display: block; }
+
+.spell-ctx {
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+  line-height: 1.6;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  background: var(--bg);
+  border-radius: 6px;
+  margin-top: 10px;
+  font-family: var(--mono);
+}
+
+.btn-approve {
+  background: #22c55e18;
+  border: 1px solid #22c55e44;
+  color: var(--green);
+  border-radius: 6px;
+  padding: 5px 14px;
+  font-size: 12px;
+  font-family: var(--mono);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-approve:hover { background: #22c55e30; }
+
+/* ─── by-page tab ─────────────────────────────────────────────────────────── */
+.page-list { display: flex; flex-direction: column; gap: 8px; }
+
+.page-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.page-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.page-card-header:hover { background: var(--surface2); }
+
+.page-status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.page-status-dot.ok  { background: var(--green); }
+.page-status-dot.bad { background: var(--red); }
+.page-status-dot.err { background: var(--amber); }
+
+.page-url {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text);
+  flex: 1;
+  word-break: break-all;
+}
+
+.page-mini-stats {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.page-body {
+  display: none;
+  padding: 14px 16px;
+  border-top: 1px solid var(--border);
+}
+
+.page-body.open { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+.page-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.page-link-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.page-link-item:last-child { border-bottom: none; }
+
+.page-typo-item {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.page-typo-item:last-child { border-bottom: none; }
+
+/* ─── file upload ─────────────────────────────────────────────────────────── */
+.file-drop {
+  border: 2px dashed var(--border2);
+  border-radius: var(--radius);
+  padding: 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  font-size: 12px;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+.file-drop:hover, .file-drop.drag-over {
+  border-color: var(--accent);
+  background: #4f6ef710;
+}
+
+.file-drop input { display: none; }
+
+.file-name {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--accent2);
+  margin-top: 6px;
+  word-break: break-all;
+}
+
+/* ─── alerts ──────────────────────────────────────────────────────────────── */
+.alert {
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: var(--mono);
+}
+
+.alert.success { background: #22c55e12; border: 1px solid #22c55e44; color: var(--green); }
+.alert.error   { background: #ef444412; border: 1px solid #ef444444; color: var(--red);   }
+.alert.warn    { background: #f59e0b12; border: 1px solid #f59e0b44; color: var(--amber); }
+
+/* ─── scrollbar ───────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+
+/* ─── responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+  .metrics-row { grid-template-columns: repeat(3, 1fr); }
+  .page-body.open { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- topbar -->
+  <header class="topbar">
+    <div class="topbar-logo">
+      <div class="icon">🔍</div>
+      TESTERPRO
+    </div>
+    <span style="font-size:12px; color:var(--muted); font-family:var(--mono);">Broken links &amp; spell checker</span>
+    <div class="topbar-caps" id="capBadges"></div>
+  </header>
+
+  <!-- sidebar -->
+  <aside class="sidebar">
+
+    <div class="sidebar-section">
+      <label class="section-title">Input mode</label>
+      <div class="radio-group">
+        <input type="radio" name="mode" id="modeUrl" value="url" checked />
+        <label for="modeUrl">Single URL</label>
+        <input type="radio" name="mode" id="modeSitemap" value="sitemap" />
+        <label for="modeSitemap">Sitemap .txt</label>
+      </div>
+    </div>
+
+    <div class="sidebar-section" id="urlSection">
+      <label class="section-title">Target URL</label>
+      <input type="text" id="urlInput" placeholder="https://example.com" value="https://" />
+    </div>
+
+    <div class="sidebar-section" id="sitemapSection" style="display:none">
+      <label class="section-title">Sitemap file</label>
+      <div class="file-drop" id="fileDrop">
+        <input type="file" id="fileInput" accept=".txt" />
+        <div>📄 Click or drag &amp; drop a .txt file</div>
+        <div class="file-name" id="fileName"></div>
+      </div>
+      <div style="font-size:11px; color:var(--muted); margin-top:6px;" id="sitemapPreview"></div>
+    </div>
+
+    <hr class="divider" />
+
+    <div class="sidebar-section">
+      <label class="section-title">Checks</label>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <div class="toggle-row">
+          <span class="toggle-label">Spell check</span>
+          <label class="toggle">
+            <input type="checkbox" id="runSpell" checked />
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Link check</span>
+          <label class="toggle">
+            <input type="checkbox" id="runLinks" checked />
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- <div class="sidebar-section">
+      <div class="slider-wrap">
+        <div class="slider-top">
+          <span class="section-title" style="margin:0">Parallel workers</span>
+          <span class="slider-val" id="workerVal">3</span>
+        </div>
+        <input type="range" min="1" max="10" value="3" id="workerSlider" />
+      </div>
+    </div> -->
+
+    <button class="btn-primary" id="runBtn">▶ Run Tests</button>
+
+    <hr class="divider" />
+
+    <div class="sidebar-section">
+      <label class="section-title">Custom dictionary</label>
+      <div class="dict-list" id="dictList">
+        <span style="font-size:11px; color:var(--muted);">Empty — approve typos to add words.</span>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- main content -->
+  <main class="main" id="mainContent">
+
+    <!-- empty state -->
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">🔍</div>
+      <h2>Ready to Test</h2>
+      <p>Choose <strong>Single URL</strong> or upload a <strong>sitemap .txt</strong> file,<br/>then click <strong>Run </strong> to begin.</p>
+    </div>
+
+    <!-- progress (hidden initially) -->
+    <div class="progress-section" id="progressSection" style="display:none">
+      <div class="progress-title">
+        <div class="spinner"></div>
+        <span id="progressMsg">Starting…</span>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-stats">
+        <span>Pages scanned: <strong id="statPages">0 / 0</strong></span>
+        <span>Outbound links found: <strong id="statLinksFound">0</strong></span>
+        <span>Outbound links checked: <strong id="statLinksChecked">0</strong></span>
+        <span>Broken: <strong id="statLinksBroken" style="color:var(--red)">0</strong></span>
+        <span id="statPct">0%</span>
+      </div>
+      <div class="log-lines" id="logLines"></div>
+    </div>
+
+    <!-- results (hidden initially) -->
+    <div id="resultsSection" style="display:none">
+
+      <div class="metrics-row" id="metricsRow"></div>
+
+      <div class="tabs-wrap" style="margin-top:8px;">
+        <div class="tab-bar">
+          <button class="tab-btn active" data-tab="links">🔗 Links <span id="tabCountLinks"></span></button>
+          <button class="tab-btn" data-tab="spell">✏️ Spelling <span id="tabCountSpell"></span></button>
+          <button class="tab-btn" data-tab="pages">📄 By page <span id="tabCountPages"></span></button>
+        </div>
+
+        <!-- links tab -->
+        <div class="tab-panel active" id="tab-links">
+          <div class="filter-bar">
+            <div class="filter-pills">
+              <button class="pill active" data-filter="all">All</button>
+              <button class="pill" data-filter="broken">Broken</button>
+              <button class="pill" data-filter="ok">OK</button>
+            </div>
+            <input type="text" class="filter-search" id="linkSearch" placeholder="Filter by URL…" />
+          </div>
+          <div class="count-caption" id="linkCaption"></div>
+          <div class="link-list" id="linkList"></div>
+        </div>
+
+        <!-- spell tab -->
+        <div class="tab-panel" id="tab-spell">
+          <input type="text" id="spellSearch" placeholder="Search typos…" style="margin-bottom:12px;" />
+          <div class="count-caption" id="spellCaption"></div>
+          <div class="spell-list" id="spellList"></div>
+        </div>
+
+        <!-- pages tab -->
+        <div class="tab-panel" id="tab-pages">
+          <input type="text" id="pageSearch" placeholder="Filter pages by URL…" style="margin-bottom:12px;" />
+          <div class="page-list" id="pageList"></div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+/* ── state ──────────────────────────────────────────────────────────────────── */
+let currentScanId = null;
+let pollTimer     = null;
+let sitemapUrls   = [];
+let userDict      = new Set();
+let allResults    = { links: [], typos: [], pages: [] };
+let linkFilter    = 'all';
+let capData       = {};
+
+const API = '';  // same origin
+
+/* ── init ───────────────────────────────────────────────────────────────────── */
+async function init() {
+  await loadCapabilities();
+  await loadDictionary();
+  bindEvents();
+}
+
+async function loadCapabilities() {
+  try {
+    const res = await fetch(`${API}/api/capabilities`);
+    capData = await res.json();
+    const el = document.getElementById('capBadges');
+    el.innerHTML = [
+      `<span class="cap-badge ${capData.spellcheck ? 'on' : 'off'}">spell ${capData.spellcheck ? '✓' : '✗'}</span>`,
+      `<span class="cap-badge ${capData.spacy ? 'on' : 'off'}">spaCy ${capData.spacy ? '✓' : '✗'}</span>`,
+      `<span class="cap-badge ${capData.stealth ? 'on' : 'off'}">stealth ${capData.stealth ? '✓' : '✗'}</span>`,
+    ].join('');
+  } catch {}
+}
+
+async function loadDictionary() {
+  try {
+    const res = await fetch(`${API}/api/dictionary`);
+    const data = await res.json();
+    userDict = new Set(data.words);
+    renderDict();
+  } catch {}
+}
+
+function renderDict() {
+  const el = document.getElementById('dictList');
+  if (userDict.size === 0) {
+    el.innerHTML = `<span style="font-size:11px; color:var(--muted);">Empty — approve typos to add words.</span>`;
+    return;
+  }
+  el.innerHTML = [...userDict].sort().map(w => `
+    <div class="dict-word">
+      <span>${w}</span>
+      <button class="dict-rm" onclick="removeWord('${w}')" title="Remove">✕</button>
+    </div>
+  `).join('');
+}
+
+/* ── events ─────────────────────────────────────────────────────────────────── */
+function bindEvents() {
+  // mode switch
+  document.querySelectorAll('input[name="mode"]').forEach(r =>
+    r.addEventListener('change', () => {
+      const url = document.getElementById('urlSection');
+      const sit = document.getElementById('sitemapSection');
+      if (r.value === 'url') { url.style.display = ''; sit.style.display = 'none'; }
+      else                   { url.style.display = 'none'; sit.style.display = ''; }
+    })
+  );
+
+  // // slider
+  // const slider = document.getElementById('workerSlider');
+  // slider.addEventListener('input', () => {
+  //   document.getElementById('workerVal').textContent = slider.value;
+  // });
+
+  // run button
+  document.getElementById('runBtn').addEventListener('click', startScan);
+
+  // file upload
+  const fileDrop = document.getElementById('fileDrop');
+  const fileInput = document.getElementById('fileInput');
+  fileDrop.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+  fileDrop.addEventListener('dragover', e => { e.preventDefault(); fileDrop.classList.add('drag-over'); });
+  fileDrop.addEventListener('dragleave', () => fileDrop.classList.remove('drag-over'));
+  fileDrop.addEventListener('drop', e => {
+    e.preventDefault();
+    fileDrop.classList.remove('drag-over');
+    handleFile(e.dataTransfer.files[0]);
+  });
+
+  // tabs
+  document.querySelectorAll('.tab-btn').forEach(btn =>
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+    })
+  );
+
+  // link filter pills
+  document.querySelectorAll('.pill').forEach(p =>
+    p.addEventListener('click', () => {
+      document.querySelectorAll('.pill').forEach(x => x.classList.remove('active'));
+      p.classList.add('active');
+      linkFilter = p.dataset.filter;
+      renderLinks();
+    })
+  );
+
+  // search filters
+  document.getElementById('linkSearch').addEventListener('input', renderLinks);
+  document.getElementById('spellSearch').addEventListener('input', renderSpell);
+  document.getElementById('pageSearch').addEventListener('input', renderPages);
+}
+
+function handleFile(file) {
+  if (!file) return;
+  document.getElementById('fileName').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = e => {
+    sitemapUrls = e.target.result.split('\n')
+      .map(l => l.trim())
+      .filter(l => l && !l.startsWith('#') && /^https?:\/\//.test(l));
+    document.getElementById('sitemapPreview').textContent =
+      `Found ${sitemapUrls.length} URL(s)`;
+  };
+  reader.readAsText(file);
+}
+
+/* ── scan control ────────────────────────────────────────────────────────────── */
+async function startScan() {
+  const mode = document.querySelector('input[name="mode"]:checked').value;
+  let urls = [];
+
+  if (mode === 'url') {
+    const v = document.getElementById('urlInput').value.trim();
+    if (!v) return alert('Please enter a URL.');
+    urls = [v];
+  } else {
+    if (!sitemapUrls.length) return alert('Please upload a sitemap .txt file first.');
+    urls = sitemapUrls;
+  }
+
+  currentScanId = null;
+  allResults = { links: [], typos: [], pages: [] };
+
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('progressSection').style.display = '';
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('runBtn').disabled = true;
+  document.getElementById('progressMsg').textContent = 'Starting scan…';
+  document.getElementById('progressFill').style.width = '0%';
+  document.getElementById('logLines').textContent = '';
+
+  const body = {
+    urls,
+    run_spell: document.getElementById('runSpell').checked,
+    run_links: document.getElementById('runLinks').checked,
+    // num_workers: parseInt(document.getElementById('workerSlider').value),
+    num_workers: 1,
+  };
+
+  try {
+    const res = await fetch(`${API}/api/scan/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    currentScanId = data.scan_id;
+    pollTimer = setInterval(pollScan, 1500);
+  } catch (err) {
+    alert('Failed to start scan: ' + err);
+    document.getElementById('runBtn').disabled = false;
+  }
+}
+
+async function pollScan() {
+  if (!currentScanId) return;
+  try {
+    const res = await fetch(`${API}/api/scan/${currentScanId}`);
+    const data = await res.json();
+    updateProgress(data);
+    if (data.status === 'done') {
+      clearInterval(pollTimer);
+      document.getElementById('runBtn').disabled = false;
+      document.getElementById('progressSection').style.display = 'none';
+      buildResults(data);
+    }
+  } catch {}
+}
+
+function updateProgress(data) {
+  const tp  = data.total_pages || 0;
+  const pd  = data.pages_done  || 0;
+  const pct = tp > 0 ? Math.round(pd / tp * 100) : 0;
+
+  // Tally outbound link stats across all completed pages
+  const completedPages    = data.results || [];
+  const totalLinksFound   = completedPages.reduce((s, r) => s + (r.links || []).length, 0);
+  const totalLinksBroken  = completedPages.reduce((s, r) => s + (r.links || []).filter(l => l.broken).length, 0);
+  const totalLinksChecked = data.total_links_checked || 0;
+
+  // Update progress bar + page counter
+  document.getElementById('progressFill').style.width   = pct + '%';
+  document.getElementById('statPages').textContent       = `${pd} / ${tp}`;
+  document.getElementById('statPct').textContent         = pct + '%';
+
+  // Update the three separate link stat spans
+  document.getElementById('statLinksFound').textContent   = totalLinksFound;
+  document.getElementById('statLinksChecked').textContent = totalLinksChecked;
+  document.getElementById('statLinksBroken').textContent  = totalLinksBroken;
+
+  // Log box shows last 15 log lines from backend
+  if (data.log && data.log.length) {
+    document.getElementById('logLines').textContent = data.log.join('\n');
+  }
+
+  // Spinner message = latest log line so user sees exactly what's happening
+  if (data.log && data.log.length) {
+    document.getElementById('progressMsg').textContent = data.log[data.log.length - 1];
+  } else if (pd > 0) {
+    document.getElementById('progressMsg').textContent = `Scanning… ${pd} of ${tp} page(s) complete`;
+  }
+}
+
+/* ── results rendering ───────────────────────────────────────────────────────── */
+function buildResults(data) {
+  // aggregate
+  const pages = data.results || [];
+  const allLinks = pages.flatMap(p => p.links || []);
+  const allTypos = pages.flatMap(p => p.typos || []);
+  const visibleTypos = allTypos.filter(t => !userDict.has(t.word.toLowerCase()));
+  const broken = allLinks.filter(l => l.broken);
+
+  allResults.links  = allLinks;
+  allResults.typos  = visibleTypos;
+  allResults.pages  = pages;
+
+  // metrics
+  const m = data.metrics || {};
+  document.getElementById('metricsRow').innerHTML = `
+    <div class="metric-card">
+      <div class="metric-val">${pages.length}</div>
+      <div class="metric-lbl">Pages scanned</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-val">${allLinks.length}</div>
+      <div class="metric-lbl">Total links</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-val green">${allLinks.length - broken.length}</div>
+      <div class="metric-lbl">Healthy</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-val red">${broken.length}</div>
+      <div class="metric-lbl">Broken</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-val amber">${visibleTypos.length}</div>
+      <div class="metric-lbl">Typos</div>
+    </div>
+  `;
+
+  // tab counts
+  document.getElementById('tabCountLinks').textContent = `(${allLinks.length})`;
+  document.getElementById('tabCountSpell').textContent = `(${visibleTypos.length})`;
+  document.getElementById('tabCountPages').textContent = `(${pages.length})`;
+
+  renderLinks();
+  renderSpell();
+  renderPages();
+
+  document.getElementById('resultsSection').style.display = '';
+}
+
+function renderLinks() {
+  const search = document.getElementById('linkSearch').value.toLowerCase();
+  let items = allResults.links;
+  if (linkFilter === 'broken') items = items.filter(l => l.broken);
+  else if (linkFilter === 'ok') items = items.filter(l => !l.broken);
+  if (search) items = items.filter(l => l.url.toLowerCase().includes(search));
+
+  document.getElementById('linkCaption').textContent = `Showing ${items.length} link(s)`;
+  document.getElementById('linkList').innerHTML = items.map(item => `
+    <div class="link-row ${item.broken ? 'broken-row' : 'ok-row'}">
+      <span class="badge ${item.broken ? 'bad' : 'ok'}">${item.broken ? '✗ broken' : '✓ ok'}</span>
+      <span class="link-url">${escHtml(item.url)}</span>
+      <span class="link-detail">${escHtml(item.detail || '')}</span>
+    </div>
+  `).join('');
+}
+
+function renderSpell() {
+  const search = document.getElementById('spellSearch').value.toLowerCase();
+  let items = allResults.typos;
+  if (search) items = items.filter(t => t.word.toLowerCase().includes(search));
+
+  document.getElementById('spellCaption').textContent =
+    `Showing ${items.length} typo(s) · ${userDict.size} word(s) in custom dictionary`;
+
+  if (!items.length) {
+    document.getElementById('spellList').innerHTML =
+      `<div class="alert success">✅ No spelling issues found.</div>`;
+    return;
+  }
+
+  document.getElementById('spellList').innerHTML = items.map((t, i) => `
+    <div class="spell-card">
+      <div class="spell-header" onclick="toggleSpell(${i})">
+        <span class="spell-word">${escHtml(t.word)}</span>
+        <span class="spell-arrow">→</span>
+        <span class="spell-suggestion">${escHtml(t.suggestion || '')}</span>
+        <button class="spell-expand" id="sexp-${i}">▾</button>
+      </div>
+      <div class="spell-body" id="sbody-${i}">
+        <div class="spell-ctx">${escHtml(t.context || '(no context)')}</div>
+        <button class="btn-approve" onclick="approveWord('${escHtml(t.word)}')">
+          ✓ Mark '${escHtml(t.word)}' as correct
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleSpell(i) {
+  const body = document.getElementById(`sbody-${i}`);
+  const btn  = document.getElementById(`sexp-${i}`);
+  body.classList.toggle('open');
+  btn.classList.toggle('open');
+}
+
+function renderPages() {
+  const search = document.getElementById('pageSearch').value.toLowerCase();
+  let items = allResults.pages;
+  if (search) items = items.filter(p => p.page_url.toLowerCase().includes(search));
+
+  const ud = userDict;
+  document.getElementById('pageList').innerHTML = items.map((p, i) => {
+    const brokenLinks = (p.links || []).filter(l => l.broken);
+    const visTypos    = (p.typos  || []).filter(t => !ud.has(t.word.toLowerCase()));
+    const hasErr = !!p.error;
+    const dotCls = hasErr ? 'err' : (brokenLinks.length ? 'bad' : 'ok');
+
+    return `
+    <div class="page-card">
+      <div class="page-card-header" onclick="togglePage(${i})">
+        <div class="page-status-dot ${dotCls}"></div>
+        <span class="page-url">${escHtml(p.page_url)}</span>
+        <div class="page-mini-stats">
+          <span style="color:var(--muted)">${(p.links||[]).length} link(s) found</span>
+          <span style="color:${brokenLinks.length ? 'var(--red)' : 'var(--green)'}">${brokenLinks.length} broken</span>
+          <span style="color:${visTypos.length ? 'var(--amber)' : 'var(--muted)'}">${visTypos.length} typo(s)</span>
+        </div>
+      </div>
+      <div class="page-body" id="pbody-${i}">
+        <div>
+          <div class="page-section-title">🔗 Links <span style="font-weight:400;color:var(--muted);font-size:10px;">${(p.links||[]).length} found</span></div>
+          ${(p.links||[]).length === 0
+            ? '<span style="font-size:12px;color:var(--muted)">No links found.</span>'
+            : (p.links||[]).map(l => `
+              <div class="page-link-item">
+                <span class="badge ${l.broken ? 'bad' : 'ok'}" style="flex-shrink:0">${l.broken ? '✗' : '✓'}</span>
+                <span style="word-break:break-all;">${escHtml(l.url)}</span>
+              </div>`).join('')
+          }
+        </div>
+        <div>
+          <div class="page-section-title">✏️ Spelling</div>
+          ${visTypos.length === 0
+            ? '<span style="font-size:12px;color:var(--muted)">No issues.</span>'
+            : visTypos.map((t, ti) => `
+              <div class="page-typo-item">
+                <strong style="color:var(--amber)">${escHtml(t.word)}</strong>
+                <span style="color:var(--muted)"> → </span>
+                <em style="color:var(--green)">${escHtml(t.suggestion)}</em>
+                <br/>
+                <button class="btn-approve" style="margin-top:4px;" onclick="approveWord('${escHtml(t.word)}')">
+                  ✓ Mark as correct
+                </button>
+              </div>`).join('')
+          }
+          ${hasErr ? `<div class="alert error" style="margin-top:8px;">${escHtml(p.error)}</div>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function togglePage(i) {
+  const body = document.getElementById(`pbody-${i}`);
+  body.classList.toggle('open');
+}
+
+/* ── dictionary actions ──────────────────────────────────────────────────────── */
+async function approveWord(word) {
+  word = word.toLowerCase();
+  userDict.add(word);
+  await fetch(`${API}/api/dictionary/add`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ word }),
+  });
+  renderDict();
+  // re-filter typos
+  allResults.typos = allResults.typos.filter(t => !userDict.has(t.word.toLowerCase()));
+  allResults.pages.forEach(p => {
+    if (p.typos) p.typos = p.typos.filter(t => !userDict.has(t.word.toLowerCase()));
+  });
+  renderSpell();
+  renderPages();
+  // update typo count in metrics
+  const typoMetric = document.querySelector('.metric-val.amber');
+  if (typoMetric) typoMetric.textContent = allResults.typos.length;
+  document.getElementById('tabCountSpell').textContent = `(${allResults.typos.length})`;
+}
+
+async function removeWord(word) {
+  userDict.delete(word.toLowerCase());
+  await fetch(`${API}/api/dictionary/remove`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ word }),
+  });
+  renderDict();
+}
+
+/* ── utils ───────────────────────────────────────────────────────────────────── */
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/* ── boot ────────────────────────────────────────────────────────────────────── */
+init();
+</script>
+</body>
+</html>

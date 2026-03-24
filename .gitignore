@@ -1,0 +1,15 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+venv/
+
+# Local runtime files
+user_dictionary.txt
+
+# IDE / OS
+.DS_Store
+.idea/
+.vscode/
