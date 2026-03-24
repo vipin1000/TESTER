@@ -204,7 +204,7 @@ def try_playwright(browser_context, url):
     page = browser_context.new_page()
     Stealth().apply_stealth_sync(page)
     try:
-        response = page.goto(url, wait_until="domcontentloaded", timeout=10000)
+        response = page.goto(url, wait_until="domcontentloaded", timeout=15000)
         status = response.status if response else 0
         page.close()
         if status < 400:
@@ -218,7 +218,7 @@ def try_playwright(browser_context, url):
 # Method 2: requests
 def try_requests(url):
     try:
-        response = requests.get(url, headers=HEADERS, timeout=10, allow_redirects=True, verify=False)
+        response = requests.get(url, headers=HEADERS, timeout=15, allow_redirects=True, verify=False)
         if response.status_code < 400:
             return True, f"requests:{response.status_code}"
         return False, f"requests:{response.status_code}"
@@ -240,7 +240,7 @@ def try_curl(url):
                 "-H", f"Accept: {HEADERS['Accept']}",
                 url,
             ],
-            capture_output=True, text=True, timeout=10,
+            capture_output=True, text=True, timeout=15,
         )
         status = int(result.stdout.strip()) if result.stdout.strip().isdigit() else 0
         if status > 0 and status < 400:
