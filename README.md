@@ -60,13 +60,13 @@ Open: `http://localhost:8000`
 Build image:
 
 ```bash
-docker build -t web-audit-tool:latest .
+docker build -t test:latest .
 ```
 
 Run container:
 
 ```bash
-docker run --rm -p 8000:8000 --name web-audit-tool web-audit-tool:latest
+docker run --rm -p 8000:8000 --name test test:latest
 ```
 
 Open: `http://localhost:8000`

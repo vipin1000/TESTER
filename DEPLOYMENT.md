@@ -38,8 +38,8 @@ After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/opt/web-audit-tool
-ExecStart=/opt/web-audit-tool/.venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --workers 1
+WorkingDirectory=/opt/test
+ExecStart=/opt/test/.venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --workers 1
 Restart=always
 RestartSec=5
 User=www-data
