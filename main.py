@@ -557,9 +557,12 @@ def get_scan(scan_id: str):
     all_links = [lnk for r in state.get("results", []) for lnk in r.get("links", [])]
     broken = [lnk for lnk in all_links if lnk.get("broken")]
     return {
-        "status":     state.get("status"),
-        "pages_done": state.get("pages_done", 0),
-        "results":    state.get("results", []),
+        "status":              state.get("status"),
+        "pages_done":          state.get("pages_done", 0),
+        "total_pages":         state.get("total_pages", 0),
+        "total_links_checked": state.get("total_links_checked", 0),
+        "log":                 state.get("log", []),
+        "results":             state.get("results", []),
         "metrics": {
             "total_links": len(all_links),
             "broken":      len(broken),
@@ -571,6 +574,34 @@ def get_scan(scan_id: str):
 @app.get("/api/dictionary")
 def get_dictionary():
     return {"words": sorted(load_user_dict())}
+
+
+class DictWord(BaseModel):
+    word: str
+
+
+@app.post("/api/dictionary/add")
+def add_word(req: DictWord):
+    word = req.word.strip().lower()
+    if not word:
+        return {"ok": False, "error": "empty word"}
+    words = load_user_dict()
+    words.add(word)
+    with open(USER_DICT_FILE, "w") as f:
+        for w in sorted(words):
+            f.write(w + "\n")
+    return {"ok": True, "word": word}
+
+
+@app.post("/api/dictionary/remove")
+def remove_word(req: DictWord):
+    word = req.word.strip().lower()
+    words = load_user_dict()
+    words.discard(word)
+    with open(USER_DICT_FILE, "w") as f:
+        for w in sorted(words):
+            f.write(w + "\n")
+    return {"ok": True, "word": word}
 
 
 @app.get("/api/capabilities")
@@ -662,7 +693,9 @@ def start_scan(req: ScanRequest, background_tasks: BackgroundTasks):
         "status":               "running",
         "results":              [],
         "pages_done":           0,
+        "total_pages":          len(req.urls),
         "total_links_checked":  0,
+        "log":                  [],
     }
     background_tasks.add_task(
         run_scan, scan_id, req.urls, req.run_spell, req.run_links, req.num_workers
@@ -682,6 +715,14 @@ def drain_queue(result_q, scan_id):
                 "links":          msg["links"],
                 "fetch_strategy": msg.get("fetch_strategy", "unknown"),
             })
+            typo_count = len(msg["typos"])
+            link_count = len(msg["links"])
+            broken_count = sum(1 for l in msg["links"] if l.get("broken"))
+            log_line = (
+                f"✓ {msg['page_url']} | strategy={msg.get('fetch_strategy','?')} | "
+                f"links={link_count} ({broken_count} broken) | typos={typo_count}"
+            )
+            state["log"] = (state["log"] + [log_line])[-15:]
         elif msg["type"] == "link_progress":
             state["total_links_checked"] += 1
         elif msg["type"] == "page_error":
@@ -693,6 +734,8 @@ def drain_queue(result_q, scan_id):
                 "error":          msg["msg"],
                 "fetch_strategy": "failed",
             })
+            log_line = f"✗ {msg['page_url']} — {msg['msg']}"
+            state["log"] = (state["log"] + [log_line])[-15:]
             log.error(f"[drain] Page error: {msg['page_url']} — {msg['msg']}")
         elif msg["type"] == "done":
             state["status"] = "done"
