@@ -50,6 +50,4 @@ If behavior changes, update:
 - `DEPLOYMENT.md` (if operationally relevant)
 - `CHANGELOG.md`
 
-## Code of Conduct
 
-By participating, you agree to follow `CODE_OF_CONDUCT.md`.

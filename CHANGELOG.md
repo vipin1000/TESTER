@@ -10,7 +10,6 @@ All notable changes to this project are documented in this file.
   - `DEPLOYMENT.md`
   - `SECURITY.md`
   - `CONTRIBUTING.md`
-  - `CODE_OF_CONDUCT.md`
   - `LICENSE`
   - `CHANGELOG.md`
 
