@@ -5,3 +5,4 @@ playwright
 playwright-stealth
 pyspellchecker
 spacy
+beautifulsoup4
