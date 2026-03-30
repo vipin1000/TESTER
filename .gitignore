@@ -8,8 +8,7 @@ venv/
 
 # Local runtime files
 user_dictionary.txt
-test.py
-test2.py
+
 
 # IDE / OS
 .DS_Store
