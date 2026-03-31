@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Testing  Tool</title>
+<title>TestPro — Broken Links &amp; Spell Checker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <style>
@@ -205,16 +205,6 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
 }
 .toggle input:checked ~ .toggle-thumb { transform: translateX(18px); }
 
-.slider-wrap { display: flex; flex-direction: column; gap: 6px; }
-.slider-wrap .slider-top { display: flex; justify-content: space-between; font-size: 12px; }
-.slider-val { font-family: var(--mono); color: var(--accent2); font-weight: 700; }
-
-input[type="range"] {
-  width: 100%;
-  accent-color: var(--accent);
-  cursor: pointer;
-}
-
 .btn-primary {
   display: block;
   width: 100%;
@@ -285,10 +275,7 @@ input[type="range"] {
   color: var(--muted);
   padding: 60px 20px;
 }
-.empty-icon {
-  font-size: 3.5rem;
-  filter: grayscale(0.4);
-}
+.empty-icon { font-size: 3.5rem; filter: grayscale(0.4); }
 .empty-state h2 { font-size: 18px; font-weight: 600; color: var(--text); }
 .empty-state p  { font-size: 13px; line-height: 1.6; max-width: 360px; }
 
@@ -344,6 +331,7 @@ input[type="range"] {
   font-family: var(--mono);
   font-size: 11px;
   color: var(--muted);
+  flex-wrap: wrap;
 }
 
 .progress-stat strong { color: var(--text); }
@@ -436,10 +424,7 @@ input[type="range"] {
   align-items: center;
 }
 
-.filter-pills {
-  display: flex;
-  gap: 6px;
-}
+.filter-pills { display: flex; gap: 6px; }
 
 .pill {
   background: var(--bg);
@@ -540,11 +525,7 @@ input[type="range"] {
   color: var(--amber);
 }
 
-.spell-arrow {
-  font-size: 11px;
-  color: var(--muted);
-  margin: 0 6px;
-}
+.spell-arrow { font-size: 11px; color: var(--muted); margin: 0 6px; }
 
 .spell-suggestion {
   font-family: var(--mono);
@@ -727,38 +708,25 @@ input[type="range"] {
 .alert.error   { background: #ef444412; border: 1px solid #ef444444; color: var(--red);   }
 .alert.warn    { background: #f59e0b12; border: 1px solid #f59e0b44; color: var(--amber); }
 
-/* ─── crawler depth/pages inputs ─────────────────────────────────────────── */
-.crawler-options {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 8px;
-  padding: 10px 12px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-}
-.crawler-options label { font-size: 11px; color: var(--muted); font-family: var(--mono); }
-.crawler-options input[type="number"] {
-  width: 100%;
-  background: var(--surface2);
-  border: 1px solid var(--border2);
-  border-radius: 6px;
-  padding: 5px 8px;
-  color: var(--text);
-  font-family: var(--mono);
-  font-size: 12px;
-  outline: none;
-}
-.crawler-options input[type="number"]:focus { border-color: var(--accent); }
-
 /* ─── export bar ──────────────────────────────────────────────────────────── */
 .export-bar {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
   margin-bottom: 14px;
+  flex-wrap: wrap;
+  align-items: center;
 }
+
+.export-bar-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-right: 4px;
+}
+
 .btn-export {
   background: var(--surface2);
   border: 1px solid var(--border2);
@@ -769,8 +737,15 @@ input[type="range"] {
   color: var(--accent2);
   cursor: pointer;
   transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
+
 .btn-export:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+.btn-export.json-btn:hover { background: #7c3aed; border-color: #7c3aed; }
+.btn-export.txt-btn:hover  { background: #0891b2; border-color: #0891b2; }
 
 /* ─── depth badge in pages tab ────────────────────────────────────────────── */
 .depth-badge {
@@ -785,6 +760,7 @@ input[type="range"] {
 }
 
 /* ─── scrollbar ───────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
 
@@ -860,34 +836,8 @@ input[type="range"] {
             <div class="toggle-thumb"></div>
           </label>
         </div>
-        <!-- <div class="toggle-row">
-          <span class="toggle-label">Crawl whole site</span>
-          <label class="toggle">
-            <input type="checkbox" id="doCrawl" />
-            <div class="toggle-track"></div>
-            <div class="toggle-thumb"></div>
-          </label>
-        </div> -->
-        <!-- <div class="crawler-options" id="crawlerOptions" style="display:none">
-          <label>Max pages
-            <input type="number" id="maxPages" value="50" min="1" max="500" />
-          </label>
-          <label>Max depth
-            <input type="number" id="maxDepth" value="3" min="1" max="10" />
-          </label>
-        </div> -->
       </div>
     </div>
-
-    <!-- <div class="sidebar-section">
-      <div class="slider-wrap">
-        <div class="slider-top">
-          <span class="section-title" style="margin:0">Parallel workers</span>
-          <span class="slider-val" id="workerVal">3</span>
-        </div>
-        <input type="range" min="1" max="10" value="3" id="workerSlider" />
-      </div>
-    </div> -->
 
     <button class="btn-primary" id="runBtn">▶ Run Tests</button>
 
@@ -909,7 +859,7 @@ input[type="range"] {
     <div class="empty-state" id="emptyState">
       <div class="empty-icon">🔍</div>
       <h2>Ready to Test</h2>
-      <p>Choose <strong>Single URL</strong> or upload a <strong>sitemap .txt</strong> file,<br/>then click <strong>Run </strong> to begin.</p>
+      <p>Choose <strong>Single URL</strong> or upload a <strong>sitemap .txt</strong> file,<br/>then click <strong>Run Tests</strong> to begin.</p>
     </div>
 
     <!-- progress (hidden initially) -->
@@ -923,8 +873,8 @@ input[type="range"] {
       </div>
       <div class="progress-stats">
         <span>Pages scanned: <strong id="statPages">0 / 0</strong></span>
-        <span>Outbound links found: <strong id="statLinksFound">0</strong></span>
-        <span>Outbound links checked: <strong id="statLinksChecked">0</strong></span>
+        <span>Links found: <strong id="statLinksFound">0</strong></span>
+        <span>Links checked: <strong id="statLinksChecked">0</strong></span>
         <span>Broken: <strong id="statLinksBroken" style="color:var(--red)">0</strong></span>
         <span>Progress: <strong id="statPct">0%</strong></span>
       </div>
@@ -934,9 +884,15 @@ input[type="range"] {
     <!-- results (hidden initially) -->
     <div id="resultsSection" style="display:none">
 
+      <!-- ── Download / Export bar ── -->
       <div class="export-bar">
-        <button class="btn-export" onclick="exportScan('csv')">⬇ Export CSV</button>
-        <button class="btn-export" onclick="exportScan('json')">⬇ Export JSON</button>
+        <span class="export-bar-label">⬇ Download report</span>
+        <button class="btn-export json-btn" onclick="downloadReport('json')" title="Download full JSON report">
+          <span>{ }</span> JSON
+        </button>
+        <button class="btn-export txt-btn" onclick="downloadReport('txt')" title="Download plain-text report">
+          <span>≡</span> TXT
+        </button>
       </div>
 
       <div class="metrics-row" id="metricsRow"></div>
@@ -983,15 +939,16 @@ input[type="range"] {
 
 <script>
 /* ── state ──────────────────────────────────────────────────────────────────── */
-let currentScanId = null;
-let pollTimer     = null;
-let sitemapUrls   = [];
-let userDict      = new Set();
-let allResults    = { links: [], typos: [], pages: [] };
-let linkFilter    = 'all';
-let capData       = {};
+let currentScanId  = null;
+let pollTimer      = null;
+let sitemapUrls    = [];
+let userDict       = new Set();
+let allResults     = { links: [], typos: [], pages: [] };
+let linkFilter     = 'all';
+let capData        = {};
+let lastScanMeta   = { scanned_url: '', timestamp: '' };   // for report headers
 
-const API = '';  // same origin
+const API = '';   // same origin
 
 /* ── init ───────────────────────────────────────────────────────────────────── */
 async function init() {
@@ -1007,8 +964,8 @@ async function loadCapabilities() {
     const el = document.getElementById('capBadges');
     el.innerHTML = [
       `<span class="cap-badge ${capData.spellcheck ? 'on' : 'off'}">spell ${capData.spellcheck ? '✓' : '✗'}</span>`,
-      `<span class="cap-badge ${capData.spacy ? 'on' : 'off'}">spaCy ${capData.spacy ? '✓' : '✗'}</span>`,
-      `<span class="cap-badge ${capData.stealth ? 'on' : 'off'}">stealth ${capData.stealth ? '✓' : '✗'}</span>`,
+      `<span class="cap-badge ${capData.spacy    ? 'on' : 'off'}">spaCy ${capData.spacy    ? '✓' : '✗'}</span>`,
+      `<span class="cap-badge ${capData.stealth  ? 'on' : 'off'}">stealth ${capData.stealth? '✓' : '✗'}</span>`,
     ].join('');
   } catch {}
 }
@@ -1038,32 +995,21 @@ function renderDict() {
 
 /* ── events ─────────────────────────────────────────────────────────────────── */
 function bindEvents() {
-  // crawler toggle
-  document.getElementById('doCrawl').addEventListener('change', function() {
-    document.getElementById('crawlerOptions').style.display = this.checked ? '' : 'none';
-  });
-
   // mode switch
   document.querySelectorAll('input[name="mode"]').forEach(r =>
     r.addEventListener('change', () => {
-      const url = document.getElementById('urlSection');
-      const sit = document.getElementById('sitemapSection');
-      if (r.value === 'url') { url.style.display = ''; sit.style.display = 'none'; }
-      else                   { url.style.display = 'none'; sit.style.display = ''; }
+      const urlSec = document.getElementById('urlSection');
+      const sitSec = document.getElementById('sitemapSection');
+      if (r.value === 'url') { urlSec.style.display = ''; sitSec.style.display = 'none'; }
+      else                   { urlSec.style.display = 'none'; sitSec.style.display = ''; }
     })
   );
-
-  // // slider
-  // const slider = document.getElementById('workerSlider');
-  // slider.addEventListener('input', () => {
-  //   document.getElementById('workerVal').textContent = slider.value;
-  // });
 
   // run button
   document.getElementById('runBtn').addEventListener('click', startScan);
 
   // file upload
-  const fileDrop = document.getElementById('fileDrop');
+  const fileDrop  = document.getElementById('fileDrop');
   const fileInput = document.getElementById('fileInput');
   fileDrop.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
@@ -1122,31 +1068,34 @@ async function startScan() {
 
   if (mode === 'url') {
     const v = document.getElementById('urlInput').value.trim();
-    if (!v) return alert('Please enter a URL.');
+    if (!v || v === 'https://') return alert('Please enter a valid URL.');
     urls = [v];
   } else {
     if (!sitemapUrls.length) return alert('Please upload a sitemap .txt file first.');
     urls = sitemapUrls;
   }
-https://
+
+  // store meta for report
+  lastScanMeta = {
+    scanned_url: urls.join(', '),
+    timestamp: new Date().toISOString(),
+  };
+
   currentScanId = null;
   allResults = { links: [], typos: [], pages: [] };
 
-  document.getElementById('emptyState').style.display = 'none';
-  document.getElementById('progressSection').style.display = '';
-  document.getElementById('resultsSection').style.display = 'none';
-  document.getElementById('runBtn').disabled = true;
-  document.getElementById('progressMsg').textContent = 'Starting scan…';
-  document.getElementById('progressFill').style.width = '0%';
-  document.getElementById('logLines').textContent = '';
+  document.getElementById('emptyState').style.display        = 'none';
+  document.getElementById('progressSection').style.display   = '';
+  document.getElementById('resultsSection').style.display    = 'none';
+  document.getElementById('runBtn').disabled                 = true;
+  document.getElementById('progressMsg').textContent         = 'Starting scan…';
+  document.getElementById('progressFill').style.width        = '0%';
+  document.getElementById('logLines').textContent            = '';
 
   const body = {
     urls,
-    run_spell: document.getElementById('runSpell').checked,
-    run_links: document.getElementById('runLinks').checked,
-    do_crawl:  document.getElementById('doCrawl').checked,
-    max_pages: parseInt(document.getElementById('maxPages').value) || 50,
-    max_depth: parseInt(document.getElementById('maxDepth').value) || 3,
+    run_spell:   document.getElementById('runSpell').checked,
+    run_links:   document.getElementById('runLinks').checked,
     num_workers: 1,
   };
 
@@ -1168,7 +1117,7 @@ https://
 async function pollScan() {
   if (!currentScanId) return;
   try {
-    const res = await fetch(`${API}/api/scan/${currentScanId}`);
+    const res  = await fetch(`${API}/api/scan/${currentScanId}`);
     const data = await res.json();
     updateProgress(data);
     if (data.status === 'done') {
@@ -1181,30 +1130,27 @@ async function pollScan() {
 }
 
 function updateProgress(data) {
-  const tp  = data.total_pages || 0;
-  const pd  = data.pages_done  || 0;
-  const pct = tp > 0 ? Math.round(pd / tp * 100) : 0;
-
+  // total_pages comes from the scan queue length (set as urls.length on start)
   const completedPages    = data.results || [];
+  const pd                = data.pages_done  || 0;
+  const tp                = data.total_pages || completedPages.length || pd || 1;
+  const pct               = tp > 0 ? Math.round(pd / tp * 100) : 0;
+
   const totalLinksFound   = completedPages.reduce((s, r) => s + (r.links || []).length, 0);
   const totalLinksBroken  = completedPages.reduce((s, r) => s + (r.links || []).filter(l => l.broken).length, 0);
   const totalLinksChecked = data.total_links_checked || 0;
 
-  document.getElementById('progressFill').style.width   = pct + '%';
-  // Show "X / Y discovered" when crawling (total grows dynamically)
-  const pageLabel = tp > pd ? `${pd} / ${tp} (discovering…)` : `${pd} / ${tp}`;
-  document.getElementById('statPages').textContent       = pageLabel;
-  document.getElementById('statPct').textContent         = pct + '%';
-
-  document.getElementById('statLinksFound').textContent   = totalLinksFound;
-  document.getElementById('statLinksChecked').textContent = totalLinksChecked;
-  document.getElementById('statLinksBroken').textContent  = totalLinksBroken;
+  document.getElementById('progressFill').style.width        = pct + '%';
+  document.getElementById('statPages').textContent           = `${pd} / ${tp}`;
+  document.getElementById('statPct').textContent             = pct + '%';
+  document.getElementById('statLinksFound').textContent      = totalLinksFound;
+  document.getElementById('statLinksChecked').textContent    = totalLinksChecked;
+  document.getElementById('statLinksBroken').textContent     = totalLinksBroken;
 
   if (data.log && data.log.length) {
-    document.getElementById('logLines').textContent = data.log.join('\n');
-  }
-
-  if (data.log && data.log.length) {
+    const logEl = document.getElementById('logLines');
+    logEl.textContent = data.log.join('\n');
+    logEl.scrollTop   = logEl.scrollHeight;
     document.getElementById('progressMsg').textContent = data.log[data.log.length - 1];
   } else if (pd > 0) {
     document.getElementById('progressMsg').textContent = `Scanning… ${pd} of ${tp} page(s) complete`;
@@ -1213,19 +1159,17 @@ function updateProgress(data) {
 
 /* ── results rendering ───────────────────────────────────────────────────────── */
 function buildResults(data) {
-  // aggregate
-  const pages = data.results || [];
-  const allLinks = pages.flatMap(p => p.links || []);
-  const allTypos = pages.flatMap(p => p.typos || []);
-  const visibleTypos = allTypos.filter(t => !userDict.has(t.word.toLowerCase()));
-  const broken = allLinks.filter(l => l.broken);
+  const pages       = data.results || [];
+  const allLinks    = pages.flatMap(p => p.links  || []);
+  const allTypos    = pages.flatMap(p => p.typos  || []);
+  const visTypos    = allTypos.filter(t => !userDict.has(t.word.toLowerCase()));
+  const broken      = allLinks.filter(l => l.broken);
 
   allResults.links  = allLinks;
-  allResults.typos  = visibleTypos;
+  allResults.typos  = visTypos;
   allResults.pages  = pages;
 
   // metrics
-  const m = data.metrics || {};
   document.getElementById('metricsRow').innerHTML = `
     <div class="metric-card">
       <div class="metric-val">${pages.length}</div>
@@ -1244,14 +1188,14 @@ function buildResults(data) {
       <div class="metric-lbl">Broken</div>
     </div>
     <div class="metric-card">
-      <div class="metric-val amber">${visibleTypos.length}</div>
+      <div class="metric-val amber">${visTypos.length}</div>
       <div class="metric-lbl">Typos</div>
     </div>
   `;
 
   // tab counts
   document.getElementById('tabCountLinks').textContent = `(${allLinks.length})`;
-  document.getElementById('tabCountSpell').textContent = `(${visibleTypos.length})`;
+  document.getElementById('tabCountSpell').textContent = `(${visTypos.length})`;
   document.getElementById('tabCountPages').textContent = `(${pages.length})`;
 
   renderLinks();
@@ -1311,10 +1255,8 @@ function renderSpell() {
 }
 
 function toggleSpell(i) {
-  const body = document.getElementById(`sbody-${i}`);
-  const btn  = document.getElementById(`sexp-${i}`);
-  body.classList.toggle('open');
-  btn.classList.toggle('open');
+  document.getElementById(`sbody-${i}`).classList.toggle('open');
+  document.getElementById(`sexp-${i}`).classList.toggle('open');
 }
 
 function renderPages() {
@@ -1326,8 +1268,8 @@ function renderPages() {
   document.getElementById('pageList').innerHTML = items.map((p, i) => {
     const brokenLinks = (p.links || []).filter(l => l.broken);
     const visTypos    = (p.typos  || []).filter(t => !ud.has(t.word.toLowerCase()));
-    const hasErr = !!p.error;
-    const dotCls = hasErr ? 'err' : (brokenLinks.length ? 'bad' : 'ok');
+    const hasErr      = !!p.error;
+    const dotCls      = hasErr ? 'err' : (brokenLinks.length ? 'bad' : 'ok');
 
     return `
     <div class="page-card">
@@ -1336,7 +1278,7 @@ function renderPages() {
         <span class="page-url">${escHtml(p.page_url)}</span>
         ${p.depth !== undefined ? `<span class="depth-badge">d${p.depth}</span>` : ''}
         <div class="page-mini-stats">
-          <span style="color:var(--muted)">${(p.links||[]).length} link(s) found</span>
+          <span style="color:var(--muted)">${(p.links||[]).length} links</span>
           <span style="color:${brokenLinks.length ? 'var(--red)' : 'var(--green)'}">${brokenLinks.length} broken</span>
           <span style="color:${visTypos.length ? 'var(--amber)' : 'var(--muted)'}">${visTypos.length} typo(s)</span>
         </div>
@@ -1344,7 +1286,7 @@ function renderPages() {
       <div class="page-body" id="pbody-${i}">
         <div>
           <div class="page-section-title">🔗 Links <span style="font-weight:400;color:var(--muted);font-size:10px;">${(p.links||[]).length} found</span></div>
-          ${(p.links||[]).length === 0
+          ${!(p.links||[]).length
             ? '<span style="font-size:12px;color:var(--muted)">No links found.</span>'
             : (p.links||[]).map(l => `
               <div class="page-link-item">
@@ -1355,9 +1297,9 @@ function renderPages() {
         </div>
         <div>
           <div class="page-section-title">✏️ Spelling</div>
-          ${visTypos.length === 0
+          ${!visTypos.length
             ? '<span style="font-size:12px;color:var(--muted)">No issues.</span>'
-            : visTypos.map((t, ti) => `
+            : visTypos.map(t => `
               <div class="page-typo-item">
                 <strong style="color:var(--amber)">${escHtml(t.word)}</strong>
                 <span style="color:var(--muted)"> → </span>
@@ -1376,28 +1318,27 @@ function renderPages() {
 }
 
 function togglePage(i) {
-  const body = document.getElementById(`pbody-${i}`);
-  body.classList.toggle('open');
+  document.getElementById(`pbody-${i}`).classList.toggle('open');
 }
 
 /* ── dictionary actions ──────────────────────────────────────────────────────── */
 async function approveWord(word) {
   word = word.toLowerCase();
   userDict.add(word);
-  await fetch(`${API}/api/dictionary/add`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ word }),
-  });
+  try {
+    await fetch(`${API}/api/dictionary/add`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ word }),
+    });
+  } catch {}
   renderDict();
-  // re-filter typos
   allResults.typos = allResults.typos.filter(t => !userDict.has(t.word.toLowerCase()));
   allResults.pages.forEach(p => {
     if (p.typos) p.typos = p.typos.filter(t => !userDict.has(t.word.toLowerCase()));
   });
   renderSpell();
   renderPages();
-  // update typo count in metrics
   const typoMetric = document.querySelector('.metric-val.amber');
   if (typoMetric) typoMetric.textContent = allResults.typos.length;
   document.getElementById('tabCountSpell').textContent = `(${allResults.typos.length})`;
@@ -1405,11 +1346,13 @@ async function approveWord(word) {
 
 async function removeWord(word) {
   userDict.delete(word.toLowerCase());
-  await fetch(`${API}/api/dictionary/remove`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ word }),
-  });
+  try {
+    await fetch(`${API}/api/dictionary/remove`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ word }),
+    });
+  } catch {}
   renderDict();
 }
 
@@ -1422,15 +1365,175 @@ function escHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
-/* ── export ──────────────────────────────────────────────────────────────────── */
-function exportScan(fmt) {
-  if (!currentScanId) return;
-  const a = document.createElement('a');
-  a.href = `${API}/api/scan/${currentScanId}/export?fmt=${fmt}`;
-  a.download = '';
+function triggerDownload(content, filename, mimeType) {
+  const blob = new Blob([content], { type: mimeType });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ── report builders ─────────────────────────────────────────────────────────── */
+
+/**
+ * Build a structured JSON report from current allResults.
+ */
+function buildJsonReport() {
+  const pages    = allResults.pages;
+  const allLinks = allResults.links;
+  const broken   = allLinks.filter(l => l.broken);
+  const typos    = allResults.typos;
+
+  return {
+    meta: {
+      tool: 'TestPro — Broken Links & Spell Checker',
+      generated_at: new Date().toISOString(),
+      scanned_url: lastScanMeta.scanned_url,
+      scan_started: lastScanMeta.timestamp,
+    },
+    summary: {
+      pages_scanned:  pages.length,
+      total_links:    allLinks.length,
+      broken_links:   broken.length,
+      healthy_links:  allLinks.length - broken.length,
+      typos_found:    typos.length,
+    },
+    broken_links: broken.map(l => ({
+      url:    l.url,
+      detail: l.detail || '',
+      found_on: pages
+        .filter(p => (p.links || []).some(pl => pl.url === l.url))
+        .map(p => p.page_url),
+    })),
+    spelling_issues: typos.map(t => ({
+      word:       t.word,
+      suggestion: t.suggestion || '',
+      context:    t.context    || '',
+    })),
+    pages: pages.map(p => ({
+      page_url:       p.page_url,
+      fetch_strategy: p.fetch_strategy || 'unknown',
+      error:          p.error || null,
+      links: (p.links || []).map(l => ({
+        url:    l.url,
+        broken: l.broken,
+        detail: l.detail || '',
+      })),
+      typos: (p.typos || []).map(t => ({
+        word:       t.word,
+        suggestion: t.suggestion || '',
+      })),
+    })),
+  };
+}
+
+/**
+ * Build a human-readable plain-text report.
+ */
+function buildTxtReport() {
+  const now    = new Date().toLocaleString();
+  const pages  = allResults.pages;
+  const links  = allResults.links;
+  const broken = links.filter(l => l.broken);
+  const typos  = allResults.typos;
+
+  const sep  = '═'.repeat(72);
+  const dash = '─'.repeat(72);
+
+  let out = [];
+
+  out.push(sep);
+  out.push('  TESTERPRO — WEB AUDIT REPORT');
+  out.push(sep);
+  out.push(`  Generated : ${now}`);
+  out.push(`  Target    : ${lastScanMeta.scanned_url || '(unknown)'}`);
+  out.push('');
+
+  // Summary
+  out.push('SUMMARY');
+  out.push(dash);
+  out.push(`  Pages scanned  : ${pages.length}`);
+  out.push(`  Total links    : ${links.length}`);
+  out.push(`  Healthy links  : ${links.length - broken.length}`);
+  out.push(`  Broken links   : ${broken.length}`);
+  out.push(`  Typos found    : ${typos.length}`);
+  out.push('');
+
+  // Broken links
+  out.push('BROKEN LINKS');
+  out.push(dash);
+  if (!broken.length) {
+    out.push('  ✓ No broken links found.');
+  } else {
+    broken.forEach((l, i) => {
+      out.push(`  [${i + 1}] ${l.url}`);
+      if (l.detail) out.push(`       Detail : ${l.detail}`);
+      const foundOn = pages
+        .filter(p => (p.links || []).some(pl => pl.url === l.url))
+        .map(p => p.page_url);
+      if (foundOn.length) out.push(`       Found on : ${foundOn.join(', ')}`);
+    });
+  }
+  out.push('');
+
+  // Spelling issues
+  out.push('SPELLING ISSUES');
+  out.push(dash);
+  if (!typos.length) {
+    out.push('  ✓ No spelling issues found.');
+  } else {
+    typos.forEach((t, i) => {
+      out.push(`  [${i + 1}] "${t.word}"  →  "${t.suggestion || '?'}"`);
+      if (t.context) out.push(`       Context : ${t.context}`);
+    });
+  }
+  out.push('');
+
+  // Per-page breakdown
+  out.push('PER-PAGE BREAKDOWN');
+  out.push(dash);
+  pages.forEach((p, i) => {
+    const pageBroken = (p.links || []).filter(l => l.broken);
+    const pageTypos  = (p.typos  || []).filter(t => !userDict.has(t.word.toLowerCase()));
+    const status     = p.error ? '⚠ ERROR' : (pageBroken.length ? '✗ ISSUES' : '✓ OK');
+    out.push(`  [${i + 1}] ${status}  ${p.page_url}`);
+    if (p.error) out.push(`       Error : ${p.error}`);
+    if (pageBroken.length) {
+      pageBroken.forEach(l => out.push(`       ✗ ${l.url}`));
+    }
+    if (pageTypos.length) {
+      pageTypos.forEach(t => out.push(`       ✎ "${t.word}" → "${t.suggestion || '?'}"`));
+    }
+  });
+  out.push('');
+  out.push(sep);
+  out.push('  End of report');
+  out.push(sep);
+
+  return out.join('\n');
+}
+
+/* ── download report ─────────────────────────────────────────────────────────── */
+function downloadReport(fmt) {
+  const ts = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
+  if (fmt === 'json') {
+    const report = buildJsonReport();
+    triggerDownload(
+      JSON.stringify(report, null, 2),
+      `testpro-report-${ts}.json`,
+      'application/json'
+    );
+  } else if (fmt === 'txt') {
+    triggerDownload(
+      buildTxtReport(),
+      `testpro-report-${ts}.txt`,
+      'text/plain'
+    );
+  }
 }
 
 /* ── boot ────────────────────────────────────────────────────────────────────── */

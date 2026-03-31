@@ -8,7 +8,6 @@ import uuid
 import logging
 import time
 import random
-import json
 
 import requests
 import urllib3
@@ -32,23 +31,12 @@ app = FastAPI(title="Web Audit Tool")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# ========================= OLLAMA CONFIG =========================
-OLLAMA_URL   = "http://localhost:11434/api/chat"
-OLLAMA_MODEL = "llama3.2:3b"
-
-# Maximum characters of page text sent to the LLM in one chunk.
-# llama3.2:3b has a ~4 k-token context; ~3000 chars ≈ ~750 tokens of text,
-# leaving room for the prompt and the JSON response.
-LLM_CHUNK_SIZE = 3000
-
 # ========================= OPTIONAL DEPS =========================
-# pyspellchecker is no longer required; kept as a lightweight fallback
-# in case Ollama is unreachable.
 try:
     from spellchecker import SpellChecker
-    SPELLCHECK_FALLBACK_AVAILABLE = True
+    SPELLCHECK_AVAILABLE = True
 except ImportError:
-    SPELLCHECK_FALLBACK_AVAILABLE = False
+    SPELLCHECK_AVAILABLE = False
 
 try:
     import spacy
@@ -58,6 +46,7 @@ except Exception:
     SPACY_AVAILABLE = False
 
 # ========================= CONSTANTS =========================
+
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
@@ -90,49 +79,97 @@ BASE_IGNORE = {
     "id", "ids", "api", "ui", "ux", "ok", "faq"
 }
 
-# CDN/WAF block page signatures
+# ──────────────────────────────────────────────────────────────────────────────
+# BLOCK PAGE DETECTION
+#
+# IMPORTANT: Be VERY conservative here.
+# A login page (signin, authentication wall) is NOT broken — the link works,
+# it just requires credentials. Only flag pages that are clearly CDN/WAF
+# error pages where the destination server was never reached at all.
+#
+# Rule: only flag as block page if BOTH conditions are true:
+#   1. The page body contains a known CDN error signature
+#   2. The page has very little real content (< 2000 chars of visible text)
+#      OR the title also matches a CDN error pattern
+# ──────────────────────────────────────────────────────────────────────────────
+
+# These signatures appear ONLY in CDN/WAF-generated error pages, never in
+# real application pages.
 CDN_ERROR_SIGNATURES = [
-    "errors.edgesuite.net",
-    "Pardon Our Interruption",
-    "Request unsuccessful. Incapsula incident",
-    "Ray ID:",
-    "cf-error-details",
-    "Checking your browser before accessing",
-    "Enable JavaScript and cookies to continue",
-    "Please enable cookies.",
-    "DDoS protection by",
-    "Attention Required! | Cloudflare",
+    "errors.edgesuite.net",                        # Akamai
+    "Pardon Our Interruption",                     # Akamai
+    "Request unsuccessful. Incapsula incident",    # Imperva/Incapsula
+    "Ray ID:",                                     # Cloudflare (in error pages)
+    "cf-error-details",                            # Cloudflare error page div
+    "Checking your browser before accessing",      # Cloudflare challenge
+    "Enable JavaScript and cookies to continue",   # Cloudflare/Akamai challenge
+    "Please enable cookies.",                      # Cloudflare challenge
+    "DDoS protection by",                          # Various CDN challenge pages
+    "Attention Required! | Cloudflare",            # Cloudflare error title
 ]
 
+# These title patterns indicate a true server error, NOT a login page.
+# Be specific — do NOT include "login", "sign in", "unauthorized" etc.
 CDN_ERROR_TITLE_PATTERNS = [
-    r"^access\s+denied$",
-    r"^403\s+forbidden$",
-    r"^404\s+not\s+found$",
-    r"^500\s+",
+    r"^access\s+denied$",           # Exact "Access Denied" title only
+    r"^403\s+forbidden$",           # Exact "403 Forbidden"
+    r"^404\s+not\s+found$",         # Exact "404 Not Found"
+    r"^500\s+",                     # 500 errors
     r"attention\s+required.*cloudflare",
     r"pardon\s+our\s+interruption",
 ]
 
+
 def is_cdn_block_page(html: str) -> bool:
+    """
+    Return True ONLY if the page is a CDN/WAF-generated error page.
+    Login pages, authentication walls, and real application pages
+    with restricted access are NOT considered block pages.
+    """
     if not html:
         return False
+
     lower = html.lower()
+
+    # Check for CDN-specific body signatures (highly specific, low false-positive)
     for sig in CDN_ERROR_SIGNATURES:
         if sig.lower() in lower:
+            log.debug(f"[block-detect] CDN signature matched: {sig!r}")
             return True
+
+    # Check <title> for exact CDN error patterns
     title_match = re.search(r"<title[^>]*>(.*?)</title>", html, re.I | re.S)
     if title_match:
         title = title_match.group(1).strip().lower()
         for pat in CDN_ERROR_TITLE_PATTERNS:
             if re.search(pat, title):
+                log.debug(f"[block-detect] CDN title pattern matched: {pat!r} in {title!r}")
                 return True
+
     return False
 
+
 def effective_status(status_code: int, html: str) -> tuple:
+    """
+    Determine if a link is truly OK.
+
+    A link is BROKEN only if:
+      - HTTP status is 0 (connection failed) or >= 400 (server error), OR
+      - HTTP status is 200-399 BUT the body is a CDN error page
+
+    A link is OK if:
+      - HTTP status is 200-399 AND body is not a CDN error page.
+      - This includes login pages, paywalls, auth walls — those are reachable.
+    """
+    # Hard HTTP failure
     if status_code == 0 or status_code >= 400:
         return False, f"http:{status_code}"
+
+    # Soft failure: CDN intercepted the request and returned a fake 200
     if is_cdn_block_page(html):
         return False, f"http:{status_code}+cdn-block"
+
+    # Everything else: 200-399 with real content = OK
     return True, f"http:{status_code}"
 
 
@@ -154,126 +191,10 @@ def extract_text_from_html(html: str) -> str:
     return " ".join(soup.get_text(separator=" ").split())
 
 
-# ========================= LLM SPELLCHECK VIA OLLAMA =========================
-
-SPELLCHECK_SYSTEM_PROMPT = """You are a precise spell-checker for website content.
-
-Your job:
-1. Read the text provided by the user.
-2. Find words that are GENUINELY misspelled — wrong spelling of a real English word.
-3. Ignore: proper nouns, brand names, acronyms, technical terms, domain names, URLs,
-   codes/IDs, non-English words, and words that are simply uncommon.
-4. For each misspelling, return a short surrounding context snippet (≤ 80 chars).
-
-Respond ONLY with a JSON array. No explanation, no markdown, no extra text.
-Each item must have exactly these keys:
-  "word"       — the misspelled word as it appears in the text
-  "suggestion" — your best correct spelling
-  "context"    — a short excerpt from the text showing the word in context
-
-Example output:
-[
-  {"word": "recieve", "suggestion": "receive", "context": "...please recieve your documents..."},
-  {"word": "occured", "suggestion": "occurred", "context": "...the error occured yesterday..."}
-]
-
-If there are no misspellings, respond with exactly: []
-"""
-
-def check_spelling_llm_chunk(chunk: str) -> list:
-    """
-    Send one text chunk to Ollama llama3.2:3b and return a list of
-    spellcheck findings: [{"word": ..., "suggestion": ..., "context": ...}]
-    """
-    payload = {
-        "model": OLLAMA_MODEL,
-        "messages": [
-            {"role": "system", "content": SPELLCHECK_SYSTEM_PROMPT},
-            {"role": "user",   "content": f"Check this text for spelling errors:\n\n{chunk}"}
-        ],
-        "stream": False,
-        "options": {
-            "temperature": 0,       # deterministic — we want facts, not creativity
-            "num_predict": 1024,    # enough for a JSON array of findings
-        }
-    }
-
-    resp = requests.post(OLLAMA_URL, json=payload, timeout=120)
-    resp.raise_for_status()
-
-    raw = resp.json().get("message", {}).get("content", "").strip()
-
-    # Strip accidental markdown fences if the model adds them
-    raw = re.sub(r"^```(?:json)?\s*", "", raw, flags=re.I)
-    raw = re.sub(r"\s*```$", "", raw)
-    raw = raw.strip()
-
-    if not raw or raw == "[]":
-        return []
-
-    findings = json.loads(raw)  # let it raise on bad JSON — caught by caller
-    # Validate shape
-    valid = []
-    for item in findings:
-        if isinstance(item, dict) and "word" in item and "suggestion" in item:
-            valid.append({
-                "word":       str(item["word"]),
-                "suggestion": str(item.get("suggestion", "")),
-                "context":    str(item.get("context", "(no context)")),
-            })
-    return valid
-
-
-def check_spelling_from_text(raw_text: str) -> list:
-    """
-    Split page text into chunks and run LLM spellcheck on each.
-    Falls back to pyspellchecker if Ollama is unreachable.
-    Deduplicates results across chunks.
-    """
-    if not raw_text.strip():
-        return []
-
-    # Split into overlapping chunks so words at boundaries aren't missed
-    chunks = []
-    step = LLM_CHUNK_SIZE - 200          # 200-char overlap between chunks
-    for i in range(0, len(raw_text), step):
-        chunks.append(raw_text[i : i + LLM_CHUNK_SIZE])
-
-    log.info(f"[spell] Checking {len(raw_text)} chars in {len(chunks)} chunk(s) via Ollama ({OLLAMA_MODEL})")
-
-    all_findings: dict[str, dict] = {}   # word → finding  (dedup by word)
-
-    for idx, chunk in enumerate(chunks):
-        try:
-            findings = check_spelling_llm_chunk(chunk)
-            for f in findings:
-                w = f["word"].lower()
-                if w not in all_findings:
-                    all_findings[w] = f
-            log.info(f"[spell] Chunk {idx+1}/{len(chunks)}: {len(findings)} finding(s)")
-
-        except requests.exceptions.ConnectionError:
-            log.error("[spell] Ollama not reachable (is it running? `ollama serve`). "
-                      "Falling back to pyspellchecker.")
-            return _fallback_spellcheck(raw_text)
-
-        except requests.exceptions.Timeout:
-            log.warning(f"[spell] Ollama timed out on chunk {idx+1}. Skipping chunk.")
-
-        except json.JSONDecodeError as e:
-            log.warning(f"[spell] LLM returned invalid JSON on chunk {idx+1}: {e}. Skipping chunk.")
-
-        except Exception as e:
-            log.warning(f"[spell] Unexpected error on chunk {idx+1}: {e}. Skipping chunk.")
-
-    results = sorted(all_findings.values(), key=lambda x: x["word"])
-    log.info(f"[spell] Total unique findings: {len(results)}")
-    return results
-
-
-# ========================= FALLBACK SPELLCHECK (pyspellchecker) =========================
+# ========================= SPELLCHECK =========================
 def build_dynamic_ignore(raw_text, word_freq):
     dynamic_ignore = set(BASE_IGNORE)
+
     if SPACY_AVAILABLE:
         doc = nlp(raw_text[:1_000_000])
         for ent in doc.ents:
@@ -282,9 +203,11 @@ def build_dynamic_ignore(raw_text, word_freq):
         for token in doc:
             if token.pos_ == "PROPN":
                 dynamic_ignore.add(token.text.lower())
+
     for word, count in word_freq.items():
         if count >= 3:
             dynamic_ignore.add(word.lower())
+
     all_words_raw = re.findall(r"\b[a-zA-Z]{2,}\b", raw_text)
     case_forms = collections.defaultdict(set)
     for w in all_words_raw:
@@ -292,19 +215,19 @@ def build_dynamic_ignore(raw_text, word_freq):
     for lower, forms in case_forms.items():
         if all(f.isupper() or f.istitle() for f in forms):
             dynamic_ignore.add(lower)
+
     return dynamic_ignore
 
 
-def _fallback_spellcheck(raw_text: str) -> list:
-    """pyspellchecker-based fallback used only when Ollama is unreachable."""
-    if not SPELLCHECK_FALLBACK_AVAILABLE:
-        log.warning("[spell] pyspellchecker not installed either — skipping spellcheck.")
+def check_spelling_from_text(raw_text: str):
+    if not SPELLCHECK_AVAILABLE or not raw_text.strip():
         return []
 
     spell = SpellChecker()
     all_words = re.findall(r"\b[a-zA-Z]{3,}\b", raw_text)
     word_freq = collections.Counter(w.lower() for w in all_words)
     ignore = build_dynamic_ignore(raw_text, word_freq)
+
     candidates = [w for w in all_words if w.lower() not in ignore and not w.isupper()]
     misspelled = spell.unknown(candidates)
 
@@ -321,7 +244,7 @@ def _fallback_spellcheck(raw_text: str) -> list:
         match = pattern.search(raw_text)
         if match:
             start = max(0, match.start() - 40)
-            end   = min(len(raw_text), match.end() + 40)
+            end = min(len(raw_text), match.end() + 40)
             snippet = raw_text[start:end].replace("\n", " ").strip()
             ctx = f"...{snippet}..."
         else:
@@ -359,6 +282,10 @@ def extract_links_from_html(html: str, base_url: str) -> list:
 
 # ========================= PAGE FETCH WITH FALLBACK =========================
 def fetch_page_with_fallback(page_url: str, ctx=None):
+    """
+    Try requests → curl → Playwright to fetch a page.
+    Returns: (html, strategy_used, blocked)
+    """
     base_url = normalize_url(page_url)
 
     # ── Strategy A: requests ───────────────────────────────────────────────
@@ -384,7 +311,8 @@ def fetch_page_with_fallback(page_url: str, ctx=None):
     try:
         ua = random_ua()
         result = subprocess.run([
-            "curl", "-s", "-L", "-k", "--max-time", "30",
+            "curl", "-s", "-L", "-k",
+            "--max-time", "30",
             "-A", ua,
             "-H", "Accept: text/html,application/xhtml+xml,*/*;q=0.8",
             "-H", "Accept-Language: en-US,en;q=0.9",
@@ -394,10 +322,12 @@ def fetch_page_with_fallback(page_url: str, ctx=None):
             "-w", "\n__STATUS__%{http_code}",
             base_url
         ], capture_output=True, text=True, timeout=35)
+
         output = result.stdout
         status_match = re.search(r"__STATUS__(\d+)$", output)
         status_code = int(status_match.group(1)) if status_match else 0
         html = re.sub(r"\n__STATUS__\d+$", "", output)
+
         ok, reason = effective_status(status_code, html)
         if ok:
             log.info(f"[fetch] curl OK ({reason})")
@@ -427,15 +357,18 @@ def fetch_page_with_fallback(page_url: str, ctx=None):
             page.wait_for_timeout(800)
             page.evaluate("() => { window.scrollTo(0, 0); }")
             page.wait_for_timeout(1000)
+
             status_code = r.status if r else 0
             html = page.content()
             page.close()
+
             ok, reason = effective_status(status_code, html)
             if ok:
                 log.info(f"[fetch] Playwright OK ({reason})")
                 return html, "playwright", False
             log.warning(f"[fetch] Playwright not usable: {reason}")
             return html, "playwright-blocked", True
+
         except Exception as e:
             log.error(f"[fetch] Playwright exception: {e}")
             try:
@@ -448,8 +381,15 @@ def fetch_page_with_fallback(page_url: str, ctx=None):
 
 # ========================= LINK CHECKING =========================
 def is_broken(ctx, url):
+    """
+    Check whether a URL is broken.
+
+    Broken = connection refused / timeout / HTTP 4xx-5xx / CDN error page.
+    NOT broken = login page, paywall, auth redirect, any real page content.
+    """
     all_details = []
 
+    # ── Try requests ──────────────────────────────────────────────────────
     try:
         ua = random_ua()
         r = requests.get(url, headers=get_headers(ua), timeout=15,
@@ -465,18 +405,22 @@ def is_broken(ctx, url):
     except Exception as e:
         all_details.append(f"requests:ERR({e.__class__.__name__})")
 
+    # ── Try curl (with body capture) ──────────────────────────────────────
     try:
         ua = random_ua()
         result = subprocess.run([
-            "curl", "-s", "-L", "-k", "--max-time", "20",
+            "curl", "-s", "-L", "-k",
+            "--max-time", "20",
             "-A", ua,
             "-w", "\n__STATUS__%{http_code}",
             url
         ], capture_output=True, text=True, timeout=25)
+
         output = result.stdout
         status_match = re.search(r"__STATUS__(\d+)$", output)
         status_code = int(status_match.group(1)) if status_match else 0
         body = re.sub(r"\n__STATUS__\d+$", "", output)
+
         ok, reason = effective_status(status_code, body)
         if ok:
             return False, f"curl:{reason}"
@@ -484,6 +428,7 @@ def is_broken(ctx, url):
     except Exception as e:
         all_details.append(f"curl:ERR({e.__class__.__name__})")
 
+    # ── Try Playwright (with body capture) ────────────────────────────────
     if ctx is not None:
         page = ctx.new_page()
         Stealth().apply_stealth_sync(page)
@@ -493,6 +438,7 @@ def is_broken(ctx, url):
             status_code = r.status if r else 0
             html = page.content()
             page.close()
+
             ok, reason = effective_status(status_code, html)
             if ok:
                 return False, f"playwright:{reason}"
@@ -537,9 +483,10 @@ def make_browser_context(p):
     return browser, ctx
 
 
-# ========================= API ROUTES =========================
+# ========================= EXTRA API ROUTES =========================
 
 USER_DICT_FILE = "user_dictionary.txt"
+
 
 def load_user_dict() -> set:
     try:
@@ -557,16 +504,13 @@ def get_scan(scan_id: str):
     all_links = [lnk for r in state.get("results", []) for lnk in r.get("links", [])]
     broken = [lnk for lnk in all_links if lnk.get("broken")]
     return {
-        "status":              state.get("status"),
-        "pages_done":          state.get("pages_done", 0),
-        "total_pages":         state.get("total_pages", 0),
-        "total_links_checked": state.get("total_links_checked", 0),
-        "log":                 state.get("log", []),
-        "results":             state.get("results", []),
+        "status": state.get("status"),
+        "pages_done": state.get("pages_done", 0),
+        "results": state.get("results", []),
         "metrics": {
             "total_links": len(all_links),
-            "broken":      len(broken),
-            "ok_links":    len(all_links) - len(broken),
+            "broken": len(broken),
+            "ok_links": len(all_links) - len(broken),
         }
     }
 
@@ -576,42 +520,12 @@ def get_dictionary():
     return {"words": sorted(load_user_dict())}
 
 
-class DictWord(BaseModel):
-    word: str
-
-
-@app.post("/api/dictionary/add")
-def add_word(req: DictWord):
-    word = req.word.strip().lower()
-    if not word:
-        return {"ok": False, "error": "empty word"}
-    words = load_user_dict()
-    words.add(word)
-    with open(USER_DICT_FILE, "w") as f:
-        for w in sorted(words):
-            f.write(w + "\n")
-    return {"ok": True, "word": word}
-
-
-@app.post("/api/dictionary/remove")
-def remove_word(req: DictWord):
-    word = req.word.strip().lower()
-    words = load_user_dict()
-    words.discard(word)
-    with open(USER_DICT_FILE, "w") as f:
-        for w in sorted(words):
-            f.write(w + "\n")
-    return {"ok": True, "word": word}
-
-
 @app.get("/api/capabilities")
 def capabilities():
     return {
-        "spellcheck":          True,
-        "spellcheck_engine":   f"ollama/{OLLAMA_MODEL}",
-        "spellcheck_fallback": SPELLCHECK_FALLBACK_AVAILABLE,
-        "spacy":               SPACY_AVAILABLE,
-        "stealth":             True,
+        "spellcheck": SPELLCHECK_AVAILABLE,
+        "spacy": SPACY_AVAILABLE,
+        "stealth": True,
     }
 
 
@@ -635,16 +549,19 @@ def worker(work_q, result_q, run_spell, run_links):
                     if blocked or not html:
                         log.error(f"[worker] All strategies failed for: {base_url}")
                         result_q.put({
-                            "type":     "page_error",
+                            "type": "page_error",
                             "page_url": base_url,
-                            "msg":      f"Bot protection or access denied (last tried: {strategy}).",
+                            "msg": (
+                                f"Bot protection or access denied on all fetch strategies "
+                                f"(last tried: {strategy})."
+                            )
                         })
                         work_q.task_done()
                         continue
 
                     raw_text = extract_text_from_html(html)
-                    typos    = check_spelling_from_text(raw_text) if run_spell else []
-                    links    = extract_links_from_html(html, base_url) if run_links else []
+                    typos = check_spelling_from_text(raw_text) if run_spell else []
+                    links = extract_links_from_html(html, base_url) if run_links else []
 
                     log.info(
                         f"[worker] {base_url} | strategy={strategy} | "
@@ -658,11 +575,11 @@ def worker(work_q, result_q, run_spell, run_links):
                         result_q.put({"type": "link_progress"})
 
                     result_q.put({
-                        "type":           "page_done",
-                        "page_url":       base_url,
-                        "typos":          typos,
-                        "links":          link_results,
-                        "links_found":    len(links),
+                        "type": "page_done",
+                        "page_url": base_url,
+                        "typos": typos,
+                        "links": link_results,
+                        "links_found": len(links),
                         "fetch_strategy": strategy,
                     })
 
@@ -676,30 +593,27 @@ def worker(work_q, result_q, run_spell, run_links):
 
 
 # ========================= SCAN STATE =========================
+
 scans = {}
 
 
 class ScanRequest(BaseModel):
-    urls:        list
-    run_spell:   bool = True
-    run_links:   bool = True
-    num_workers: int  = 3
+    urls: list
+    run_spell: bool = True
+    run_links: bool = True
+    num_workers: int = 3
 
 
 @app.post("/api/scan/start")
 def start_scan(req: ScanRequest, background_tasks: BackgroundTasks):
     scan_id = str(uuid.uuid4())
     scans[scan_id] = {
-        "status":               "running",
-        "results":              [],
-        "pages_done":           0,
-        "total_pages":          len(req.urls),
-        "total_links_checked":  0,
-        "log":                  [],
+        "status": "running",
+        "results": [],
+        "pages_done": 0,
+        "total_links_checked": 0,
     }
-    background_tasks.add_task(
-        run_scan, scan_id, req.urls, req.run_spell, req.run_links, req.num_workers
-    )
+    background_tasks.add_task(run_scan, scan_id, req.urls, req.run_spell, req.run_links, req.num_workers)
     return {"scan_id": scan_id}
 
 
@@ -710,32 +624,22 @@ def drain_queue(result_q, scan_id):
         if msg["type"] == "page_done":
             state["pages_done"] += 1
             state["results"].append({
-                "page_url":       msg["page_url"],
-                "typos":          msg["typos"],
-                "links":          msg["links"],
+                "page_url": msg["page_url"],
+                "typos": msg["typos"],
+                "links": msg["links"],
                 "fetch_strategy": msg.get("fetch_strategy", "unknown"),
             })
-            typo_count = len(msg["typos"])
-            link_count = len(msg["links"])
-            broken_count = sum(1 for l in msg["links"] if l.get("broken"))
-            log_line = (
-                f"✓ {msg['page_url']} | strategy={msg.get('fetch_strategy','?')} | "
-                f"links={link_count} ({broken_count} broken) | typos={typo_count}"
-            )
-            state["log"] = (state["log"] + [log_line])[-15:]
         elif msg["type"] == "link_progress":
             state["total_links_checked"] += 1
         elif msg["type"] == "page_error":
             state["pages_done"] += 1
             state["results"].append({
-                "page_url":       msg["page_url"],
-                "typos":          [],
-                "links":          [],
-                "error":          msg["msg"],
+                "page_url": msg["page_url"],
+                "typos": [],
+                "links": [],
+                "error": msg["msg"],
                 "fetch_strategy": "failed",
             })
-            log_line = f"✗ {msg['page_url']} — {msg['msg']}"
-            state["log"] = (state["log"] + [log_line])[-15:]
             log.error(f"[drain] Page error: {msg['page_url']} — {msg['msg']}")
         elif msg["type"] == "done":
             state["status"] = "done"
@@ -745,7 +649,7 @@ def drain_queue(result_q, scan_id):
 
 def run_scan(scan_id, urls, run_spell, run_links, workers):
     result_q = queue.Queue()
-    work_q   = queue.Queue()
+    work_q = queue.Queue()
 
     normalized = [normalize_url(u) for u in urls]
     for u in normalized:
@@ -777,4 +681,4 @@ def run_scan(scan_id, urls, run_spell, run_links, workers):
 
 @app.get("/")
 def serve_index():
-    return FileResponse("static/index.html")
+    return FileResponse("static/index1.html")
